@@ -2,7 +2,7 @@
     <application
         android:label="valya"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher_new">
         <activity
             android:name=".MainActivity"
             android:exported="true"
