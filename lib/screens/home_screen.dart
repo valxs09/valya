@@ -8,22 +8,31 @@ class LottieAnimationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
+       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Lottie.asset(
               'assets/images/welcome.json', // Ruta de tu archivo de animación
-              width: 200,
-              height: 200,
+              width: 300,
+              height: 300,
               fit: BoxFit.cover,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 25),
             const Text(
-              'Bienvenido conductor escanee su camión',
+              'Bienvenido conductor',
               style: TextStyle(
                 color: Colors.grey,
-                fontSize: 24,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const Text(
+              'Escanee su camión',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 100),
@@ -46,7 +55,13 @@ class LottieAnimationScreen extends StatelessWidget {
                   fontSize: 18, // Tamaño del texto del botón
                 ),
               ),
-              child: const Text('Empezar!!!'), // Texto del botón
+              child: const Text(
+                  'Empezar!!!',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ), // Texto del botón
             ),
           ],
         ),

@@ -40,11 +40,18 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent, 
+     backgroundColor: Colors.transparent, // Hace que el fondo del Scaffold sea transparente
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.purple.shade200, Color.fromARGB(255, 206, 157, 216)],
+            colors: [
+              Color.fromARGB(255, 220, 0, 180), // #DC00B2
+              Color.fromARGB(255, 216, 0, 224), // #CA00D0
+              Color.fromARGB(255, 191, 0, 212), // #BE00D4
+              Color(0xFFA821DD), // #A821DD
+              Color(0xFF9138EA), // #9138EA// #A821DD #9138EA
+            ],
+            stops: [0.0, 0.25, 0.5, 0.75, 1.0], // Porcentajes de parada para cada color
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
