@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:scan/scan.dart';
-import 'login_screen.dart';
+import 'autorizacion_screen.dart';
 
-class ScanScreen extends StatefulWidget {
-  const ScanScreen({Key? key}) : super(key: key);
+class ScanScreenQR extends StatefulWidget {
+  const ScanScreenQR({Key? key}) : super(key: key);
 
   @override
   _ScanScreenState createState() => _ScanScreenState();
 }
 
-class _ScanScreenState extends State<ScanScreen> {
+class _ScanScreenState extends State<ScanScreenQR> {
   ScanController controller = ScanController();
   String qrcode = 'No encontrado';
   bool isStop = false;
@@ -75,17 +75,19 @@ class _ScanScreenState extends State<ScanScreen> {
   Future<void> _navigateToNextScreen() async {
     await Future.delayed(const Duration(seconds: 3));
     Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const LoginScreen()));
+        MaterialPageRoute(builder: (_) => const AutorizacionScreen()));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: WillPopScope(
-        onWillPop: () {
-          controller.pause();
-          return Future(() => true);
-        },
+       return MaterialApp(
+      debugShowCheckedModeBanner: false, // Ocultar la etiqueta de depuración
+      home: Scaffold(
+        body: WillPopScope(
+          onWillPop: () {
+            controller.pause();
+            return Future(() => true);
+          },
         child: Center(
           child: SizedBox(
             width: double.infinity,
@@ -94,7 +96,7 @@ class _ScanScreenState extends State<ScanScreen> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const Text(
-                  'Escanear Código QR del camión',
+                  'Escanear Código QR del encargado',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -165,6 +167,6 @@ class _ScanScreenState extends State<ScanScreen> {
           ),
         ),
       ),
-    );
+    ));
   }
 }

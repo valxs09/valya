@@ -39,30 +39,33 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-     backgroundColor: Colors.transparent, // Hace que el fondo del Scaffold sea transparente
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color.fromARGB(255, 220, 0, 180), // #DC00B2
-              Color.fromARGB(255, 216, 0, 224), // #CA00D0
-              Color.fromARGB(255, 191, 0, 212), // #BE00D4
-              Color(0xFFA821DD), // #A821DD
-              Color(0xFF9138EA), // #9138EA// #A821DD #9138EA
-            ],
-            stops: [0.0, 0.25, 0.5, 0.75, 1.0], // Porcentajes de parada para cada color
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+    return MaterialApp(
+      debugShowCheckedModeBanner: false, // Ocultar la etiqueta de depuración
+      home: Scaffold(
+        backgroundColor: Colors.transparent, // Hace que el fondo del Scaffold sea transparente
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color.fromARGB(255, 220, 0, 180), // #DC00B2
+                Color.fromARGB(255, 216, 0, 224), // #CA00D0
+                Color.fromARGB(255, 191, 0, 212), // #BE00D4
+                Color(0xFFA821DD), // #A821DD
+                Color(0xFF9138EA), // #9138EA
+              ],
+              stops: [0.0, 0.25, 0.5, 0.75, 1.0], // Porcentajes de parada para cada color
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
           ),
-        ),
-        child: Center(
-          child: FadeTransition(
-            opacity: _animation,
-            child: Image.asset(
-              'assets/images/logo.png',
-              width: 500,
-              height: 500,
+          child: Center(
+            child: FadeTransition(
+              opacity: _animation,
+              child: Image.asset(
+                'assets/images/logo.png',
+                width: 500,
+                height: 500,
+              ),
             ),
           ),
         ),

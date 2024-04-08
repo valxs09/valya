@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'scanQR_Camion.dart';
+import 'scanQR_Conductor.dart';
 import 'package:lottie/lottie.dart';
+
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -45,7 +46,7 @@ class LoginScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const ScanScreen()),
+                  MaterialPageRoute(builder: (_) => const ScanScreenQR()),
                 );
               },
               style: ElevatedButton.styleFrom(
