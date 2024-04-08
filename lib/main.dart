@@ -16,7 +16,7 @@ class MyApp extends StatelessWidget {
       ),
       home: SplashScreen(),
       routes: {
-        '/home': (_) => HomeScreen(),
+        '/home': (_) => LottieAnimationScreen(),
       },
     );
   }
