@@ -1,7 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'listado_viaje.dart';
 
-class FormDatosCamion extends StatelessWidget {
+class FormDatosCamion extends StatefulWidget {
+  @override
+  _FormDatosCamionState createState() => _FormDatosCamionState();
+}
+
+class _FormDatosCamionState extends State<FormDatosCamion> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  TextEditingController _kilometrajeController = TextEditingController();
+  TextEditingController _combustibleController = TextEditingController();
+  bool _validateKilometraje = false;
+  bool _validateCombustible = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,87 +32,139 @@ class FormDatosCamion extends StatelessWidget {
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              const Text(
-                'Datos del Camión',
-                style: TextStyle(
-                  fontSize: 24.0,
-                  fontWeight: FontWeight.bold,
-                  color: Color.fromARGB(255, 68, 33, 243),
-                ),
-              ),
-              const SizedBox(height: 25),
-              const Row(
-                children: [
-                  Text(
-                    'Kilometraje inicial:',
-                    style: TextStyle(
-                      fontSize: 18.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Spacer(),
-                ],
-              ),
-              const SizedBox(height: 8.0),
-              TextFormField(
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Ingrese el kilometraje inicial',
-                ),
-              ),
-              const SizedBox(height: 16.0),
-              const Row(
-                children: [
-                  Text(
-                    'Combustible inicial:',
-                    style: TextStyle(
-                      fontSize: 18.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Spacer(),
-                ],
-              ),
-              const SizedBox(height: 8.0),
-              TextFormField(
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Ingrese la gasolina inicial',
-                ),
-              ),
-              const SizedBox(height: 16.0),
-              Lottie.asset(
-                'assets/images/transport.json',
-                fit: BoxFit.cover,
-              ),
-              const SizedBox(height: 50),
-              ElevatedButton(
-                onPressed: () {
-                  // Aquí iría la lógica para procesar los datos del formulario
-                },
-                style: ElevatedButton.styleFrom(
-                  primary: const Color.fromARGB(255, 68, 33, 243),
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 16,
-                    horizontal: 50,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  textStyle: const TextStyle(
-                    fontSize: 18,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                const Text(
+                  'Datos del Camión',
+                  style: TextStyle(
+                    fontSize: 24.0,
                     fontWeight: FontWeight.bold,
+                    color: Color.fromARGB(255, 68, 33, 243),
                   ),
                 ),
-                child: const Text(
-                  'Continuar',
+                const SizedBox(height: 25),
+                const Row(
+                  children: [
+                    Text(
+                      'Kilometraje inicial:',
+                      style: TextStyle(
+                        fontSize: 18.0,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Spacer(),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 8.0),
+                TextFormField(
+                  controller: _kilometrajeController,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Ingrese el kilometraje inicial',
+                    errorStyle: TextStyle(color: Colors.red),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      setState(() {
+                        _validateKilometraje = true;
+                      });
+                      return 'Ingrese el kilometraje inicial';
+                    }
+                    return null;
+                  },
+                ),
+                _validateKilometraje
+                    ? const Padding(
+                        padding: EdgeInsets.only(left: 8.0, top: 4.0),
+                        child: Text(
+                          'Ingrese el kilometraje inicial',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      )
+                    : Container(),
+                const SizedBox(height: 16.0),
+                const Row(
+                  children: [
+                    Text(
+                      'Combustible inicial:',
+                      style: TextStyle(
+                        fontSize: 18.0,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Spacer(),
+                  ],
+                ),
+                const SizedBox(height: 8.0),
+                TextFormField(
+                  controller: _combustibleController,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    hintText: 'Ingrese la gasolina inicial',
+                    errorStyle: TextStyle(color: Colors.red),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      setState(() {
+                        _validateCombustible = true;
+                      });
+                      return 'Ingrese la gasolina inicial';
+                    }
+                    return null;
+                  },
+                ),
+                _validateCombustible
+                    ? const Padding(
+                        padding: EdgeInsets.only(left: 8.0, top: 4.0),
+                        child: Text(
+                          'Ingrese la gasolina inicial',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      )
+                    : Container(),
+                const SizedBox(height: 10),
+                Lottie.asset(
+                  'assets/images/transporte.json',
+                  fit: BoxFit.cover,
+                ),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(builder: (_) => const ListadoViajes(title: '',)),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    backgroundColor: const Color.fromARGB(
+                        255, 68, 33, 243), // Color del texto del botón
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16,
+                        horizontal: 50), // Espaciado interno del botón
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                          10), // Bordes redondeados del botón
+                    ),
+                    textStyle: const TextStyle(
+                      fontSize: 18, // Tamaño del texto del botón
+                    ),
+                  ),
+                  child: const Text(
+                    'Continuar',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ), // Texto del botón
+                ),
+              ],
+            ),
           ),
         ),
       ),
