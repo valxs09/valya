@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'detalles_screen.dart';
+import 'profile.dart'; // Importa tu pantalla de perfil
 
 class ViajeItem extends StatefulWidget {
-  const ViajeItem({Key? key, required this.location, required this.toggleViajeIniciado, required this.toggleViajeFinalizado}) : super(key: key);
+  const ViajeItem({
+    Key? key,
+    required this.location,
+    required this.toggleViajeIniciado,
+    required this.toggleViajeFinalizado,
+  }) : super(key: key);
 
   final String location;
   final VoidCallback toggleViajeIniciado;
@@ -38,8 +44,14 @@ class _ViajeItemState extends State<ViajeItem> {
                 });
               },
               icon: Icon(
-                viajeIniciado ? (viajeFinalizado ? Icons.check_circle_outline : Icons.pause_rounded) : Icons.play_circle_outline,
-                color: viajeIniciado ? (viajeFinalizado ? Colors.green : Colors.orange) : Colors.purple,
+                viajeIniciado
+                    ? (viajeFinalizado
+                        ? Icons.check_circle_outline
+                        : Icons.pause_rounded)
+                    : Icons.play_circle_outline,
+                color: viajeIniciado
+                    ? (viajeFinalizado ? Colors.green : Colors.orange)
+                    : Colors.purple,
                 size: 40,
               ),
             ),
@@ -50,33 +62,33 @@ class _ViajeItemState extends State<ViajeItem> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-            ElevatedButton(
-  onPressed: () {
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const DetallesScreen(),
-        transitionsBuilder: (_, animation, __, child) {
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(1.0, 0.0),
-              end: Offset.zero,
-            ).animate(animation),
-            child: child,
-          );
-        },
-      ),
-    );
-  },
-  style: ElevatedButton.styleFrom(
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(20),
-    ),
-    padding: const EdgeInsets.symmetric(horizontal: 16),
-    backgroundColor: const Color.fromARGB(255, 113, 158, 220), // Color del botón 'Detalles'
-  ),
-  child: const Text('Detalles'),
-),
-
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    PageRouteBuilder(
+                      pageBuilder: (_, __, ___) => const DetallesScreen(),
+                      transitionsBuilder: (_, animation, __, child) {
+                        return SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(1.0, 0.0),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        );
+                      },
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  backgroundColor: const Color.fromARGB(
+                      255, 113, 158, 220), // Color del botón 'Detalles'
+                ),
+                child: const Text('Detalles'),
+              ),
               ElevatedButton(
                 onPressed: () {
                   // Lógica para finalizar el viaje
@@ -102,11 +114,11 @@ class _ViajeItemState extends State<ViajeItem> {
   }
 }
 
-
 class ListadoViajes extends StatefulWidget {
-  const ListadoViajes({Key? key, required this.title}) : super(key: key);
+  const ListadoViajes({Key? key, required this.title, required this.tripsData}) : super(key: key);
 
   final String title;
+  final Map<String, dynamic> tripsData; // Datos de los viajes
 
   @override
   _ListadoViajesState createState() => _ListadoViajesState();
@@ -114,7 +126,12 @@ class ListadoViajes extends StatefulWidget {
 
 class _ListadoViajesState extends State<ListadoViajes> {
   bool viajeIniciado = false;
-  List<bool> viajesFinalizados = [false, false, false, false]; // Lista para rastrear si cada viaje está finalizado
+  List<bool> viajesFinalizados = [
+    false,
+    false,
+    false,
+    false
+  ]; // Lista para rastrear si cada viaje está finalizado
 
   @override
   Widget build(BuildContext context) {
@@ -125,12 +142,23 @@ class _ListadoViajesState extends State<ListadoViajes> {
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 68, 33, 243),
         title: const Text(''),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.all(8.0),
-            child: CircleAvatar(
-              backgroundImage: AssetImage('assets/images/hombre.png'),
-            ),
+        actions: [
+          Row(
+            children: [
+              GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ProfileDScreen()),
+                  );
+                },
+                child: const Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: CircleAvatar(
+                    backgroundImage: AssetImage('assets/images/hombre.png'),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -142,7 +170,7 @@ class _ListadoViajesState extends State<ListadoViajes> {
             child: Text(
               'Viajes del día',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 40,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -152,15 +180,20 @@ class _ListadoViajesState extends State<ListadoViajes> {
             child: ElevatedButton(
               onPressed: () {},
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 50),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 16, horizontal: 30),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
-                backgroundColor: const Color.fromARGB(255, 8, 23, 156), // Color del botón
+                backgroundColor:
+                    const Color.fromARGB(255, 8, 23, 156), // Color del botón
               ),
               child: const Text(
                 'Chapur-Matutiono-0504',
-                style: TextStyle(fontSize: 19),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white, // Color blanco para el texto
+                ),
               ),
             ),
           ),
@@ -191,20 +224,23 @@ class _ListadoViajesState extends State<ListadoViajes> {
           Visibility(
             visible: todosFinalizados,
             child: Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  // Acción cuando se presiona el botón "Finalizar Viajes"
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 40), // Margen inferior para mover el botón hacia arriba
+                child: ElevatedButton(
+                  onPressed: () {
+                    // Acción cuando se presiona el botón "Finalizar Viajes"
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    backgroundColor: const Color.fromARGB(255, 112, 96, 228), // Color del botón
                   ),
-                  backgroundColor: Color.fromARGB(255, 112, 96, 228), // Color del botón
-                ),
-                child: const Text(
-                  'Finalizar Viajes',
-                  style: TextStyle(fontSize: 19),
+                  child: const Text(
+                    'Finalizar Viajes',
+                    style: TextStyle(fontSize: 19, color: Colors.white),
+                  ),
                 ),
               ),
             ),
@@ -229,4 +265,3 @@ class _ListadoViajesState extends State<ListadoViajes> {
     }
   }
 }
-

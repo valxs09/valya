@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'listado_viaje.dart';
 
 class FormDatosCamion extends StatefulWidget {
@@ -49,7 +50,7 @@ class _FormDatosCamionState extends State<FormDatosCamion> {
                 const Row(
                   children: [
                     Text(
-                      'Kilometraje inicial:',
+                      'Kilometraje Final:',
                       style: TextStyle(
                         fontSize: 18.0,
                         fontWeight: FontWeight.bold,
@@ -63,7 +64,7 @@ class _FormDatosCamionState extends State<FormDatosCamion> {
                   controller: _kilometrajeController,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    hintText: 'Ingrese el kilometraje inicial',
+                    hintText: 'Ingrese el kilometraje Final',
                     errorStyle: TextStyle(color: Colors.red),
                   ),
                   validator: (value) {
@@ -71,7 +72,7 @@ class _FormDatosCamionState extends State<FormDatosCamion> {
                       setState(() {
                         _validateKilometraje = true;
                       });
-                      return 'Ingrese el kilometraje inicial';
+                      return 'Ingrese el kilometraje Final';
                     }
                     return null;
                   },
@@ -89,7 +90,7 @@ class _FormDatosCamionState extends State<FormDatosCamion> {
                 const Row(
                   children: [
                     Text(
-                      'Combustible inicial:',
+                      'Combustible Final:',
                       style: TextStyle(
                         fontSize: 18.0,
                         fontWeight: FontWeight.bold,
@@ -103,7 +104,7 @@ class _FormDatosCamionState extends State<FormDatosCamion> {
                   controller: _combustibleController,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
-                    hintText: 'Ingrese la gasolina inicial',
+                    hintText: 'Ingrese la gasolina Final',
                     errorStyle: TextStyle(color: Colors.red),
                   ),
                   validator: (value) {
@@ -111,7 +112,7 @@ class _FormDatosCamionState extends State<FormDatosCamion> {
                       setState(() {
                         _validateCombustible = true;
                       });
-                      return 'Ingrese la gasolina inicial';
+                      return 'Ingrese la gasolina Final';
                     }
                     return null;
                   },
@@ -126,30 +127,31 @@ class _FormDatosCamionState extends State<FormDatosCamion> {
                       )
                     : Container(),
                 const SizedBox(height: 10),
+               Image.asset(
+                'assets/images/gas.png', // Ruta de tu imagen
+                width: 200,
+                height: 200,
+                fit: BoxFit.cover,
+              ),
+                const SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: () {
-                    // Navegar a la pantalla ListadoViajes()
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const ListadoViajes(title: '', tripsData: {},)),
-                    );
+                    if (_formKey.currentState!.validate()) {
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(builder: (_) => const ListadoViajes(title: '', tripsData: {},)),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.white,
                     backgroundColor: const Color.fromARGB(
-                      255,
-                      68,
-                      33,
-                      243,
-                    ), // Color del texto del botón
+                        255, 68, 33, 243), // Color del texto del botón
                     padding: const EdgeInsets.symmetric(
-                      vertical: 16,
-                      horizontal: 50,
-                    ), // Espaciado interno del botón
+                        vertical: 16,
+                        horizontal: 50), // Espaciado interno del botón
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(
-                        10,
-                      ), // Bordes redondeados del botón
+                          10), // Bordes redondeados del botón
                     ),
                     textStyle: const TextStyle(
                       fontSize: 18, // Tamaño del texto del botón

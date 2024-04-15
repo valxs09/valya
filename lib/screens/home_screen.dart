@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'scanQR_Camion.dart';
+import 'login.dart';
 import 'package:lottie/lottie.dart';
 
 class LottieAnimationScreen extends StatelessWidget {
@@ -12,13 +12,13 @@ class LottieAnimationScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Lottie.asset(
-              'assets/images/welcome.json', // Ruta de tu archivo de animación
-              width: 300,
-              height: 300,
-              fit: BoxFit.cover,
-            ),
-            const SizedBox(height: 25),
+           Image.asset(
+                'assets/images/conductor.png', // Ruta de tu imagen
+                width: 200,
+                height: 200,
+                fit: BoxFit.cover,
+              ),
+            const SizedBox(height: 50),
             const Text(
               'Bienvenido conductor',
               style: TextStyle(
@@ -39,7 +39,7 @@ class LottieAnimationScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => const ScanScreen()));
+                    MaterialPageRoute(builder: (_) => LoginScreen()));
               },
               style: ElevatedButton.styleFrom(
                 foregroundColor: Colors.white,

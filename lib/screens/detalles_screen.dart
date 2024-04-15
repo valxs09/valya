@@ -11,9 +11,9 @@ class DetallesScreen extends StatelessWidget {
         title: const Text(''),
         leading: IconButton(
           onPressed: () {
-            Navigator.of(context).pop(); // Regresar a la pantalla anterior
+            Navigator.pop(context); // Utiliza Navigator.pop en lugar de Navigator.pushReplacement
           },
-          icon: Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back),
         ),
         actions: const [
           Padding(
@@ -24,8 +24,35 @@ class DetallesScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Container(
-        // Aquí iría el contenido de tu pantalla de detalles
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Text(
+            'Detalles destino 1',
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ), // Título de la pantalla en el cuerpo
+          _buildDetailText('Lugar de destino:', 'Nombre del lugar'), // Detalle de lugar de destino
+          _buildDetailText('Dirección:', 'Dirección del lugar'), // Detalle de dirección
+          _buildDetailText('Estado del viaje:', 'Estado actual'), // Detalle de estado del viaje
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailText(String title, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            title,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(width: 10),
+          Text(text),
+        ],
       ),
     );
   }

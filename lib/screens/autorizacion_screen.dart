@@ -38,7 +38,7 @@ class _AutorizacionScreenState extends State<AutorizacionScreen> {
               height: 300,
               fit: BoxFit.cover,
             ),
-            const SizedBox(height: 25),
+            const SizedBox(height: 30),
             const Text(
               'Acceso autorizado',
               style: TextStyle(
