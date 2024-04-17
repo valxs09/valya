@@ -138,7 +138,7 @@ class _FormDatosCamionState extends State<FormDatosCamion> {
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                       Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(builder: (_) => const ListadoViajes(title: '', tripsData: {},)),
+                        MaterialPageRoute(builder: (_) => const TripList(title: '',tripListJson: '',)),
                       );
                     }
                   },
