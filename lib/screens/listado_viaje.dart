@@ -9,11 +9,15 @@ class TripItem extends StatefulWidget {
   const TripItem({
     Key? key,
     required this.tripData,
+    required this.tripStarted,
+    required this.tripEnded,
     required this.toggleTripStarted,
     required this.toggleTripEnded,
   }) : super(key: key);
 
   final Map<String, dynamic> tripData;
+  final bool tripStarted;
+  final bool tripEnded;
   final VoidCallback toggleTripStarted;
   final VoidCallback toggleTripEnded;
 
@@ -22,9 +26,6 @@ class TripItem extends StatefulWidget {
 }
 
 class _TripItemState extends State<TripItem> {
-  bool tripStarted = false;
-  bool tripEnded = false;
-
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -41,20 +42,20 @@ class _TripItemState extends State<TripItem> {
             ),
             IconButton(
               onPressed: () {
-                if (!tripStarted && !tripEnded) {
-                  _startTrip();
-                } else if (tripStarted && !tripEnded) {
-                  _endTrip();
+                if (!widget.tripStarted && !widget.tripEnded) {
+                  widget.toggleTripStarted();
+                } else if (widget.tripStarted && !widget.tripEnded) {
+                  widget.toggleTripEnded();
                 }
               },
               icon: Icon(
-                tripStarted
-                    ? (tripEnded
+                widget.tripStarted
+                    ? (widget.tripEnded
                         ? Icons.check_circle_outline
                         : Icons.pause_rounded)
                     : Icons.play_circle_outline,
-                color: tripStarted
-                    ? (tripEnded ? Colors.green : Colors.orange)
+                color: widget.tripStarted
+                    ? (widget.tripEnded ? Colors.green : Colors.orange)
                     : Colors.purple,
                 size: 40,
               ),
@@ -62,7 +63,7 @@ class _TripItemState extends State<TripItem> {
           ],
         ),
         subtitle: Visibility(
-          visible: tripStarted && !tripEnded,
+          visible: widget.tripStarted && !widget.tripEnded,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -86,7 +87,7 @@ class _TripItemState extends State<TripItem> {
               ),
               ElevatedButton(
                 onPressed: () {
-                  _endTrip();
+                  widget.toggleTripEnded();
                 },
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(
@@ -103,31 +104,6 @@ class _TripItemState extends State<TripItem> {
       ),
     );
   }
-
-  void _startTrip() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    int idVehicle = widget.tripData['id_vehicle'] ?? 0;
-    int idResponsible = widget.tripData['id_responsible'] ?? 0;
-    if (idVehicle != 0 && idResponsible != 0) {
-      setState(() {
-        tripStarted = true;
-        widget.toggleTripStarted(); // Llamar al método para indicar que el viaje ha sido iniciado
-      });
-    } else {
-      // Manejar la situación en la que no se encuentran los datos del vehículo o del responsable
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Please set vehicle and responsible ID first.'),
-      ));
-    }
-  }
-
-  void _endTrip() {
-    // Lógica para finalizar el viaje
-    setState(() {
-      tripEnded = true;
-      widget.toggleTripEnded(); // Llamar al método para indicar que el viaje ha sido finalizado
-    });
-  }
 }
 
 class TripList extends StatefulWidget {
@@ -143,7 +119,8 @@ class TripList extends StatefulWidget {
 class _TripListState extends State<TripList> {
   late Future<List<Map<String, dynamic>>> _futurePoints;
   late String accessToken;
-  List<bool> tripStartedStates = []; // Lista para almacenar los estados de los viajes
+  List<bool> tripStartedStates =
+      []; // Lista para almacenar los estados de los viajes
 
   @override
   void initState() {
@@ -163,30 +140,33 @@ class _TripListState extends State<TripList> {
     });
   }
 
- Future<List<Map<String, dynamic>>> _initializeTripsList() async {
-  if (widget.tripListJson != null && widget.tripListJson!.isNotEmpty) {
-    Map<String, dynamic>? jsonData = json.decode(widget.tripListJson!);
+  Future<List<Map<String, dynamic>>> _initializeTripsList() async {
+    if (widget.tripListJson != null && widget.tripListJson!.isNotEmpty) {
+      Map<String, dynamic>? jsonData = json.decode(widget.tripListJson!);
 
-    if (jsonData != null && jsonData.containsKey('data')) {
-      List<dynamic>? tripsData = jsonData['data'];
+      if (jsonData != null && jsonData.containsKey('data')) {
+        List<dynamic>? tripsData = jsonData['data'];
 
-      if (tripsData != null && tripsData.isNotEmpty) {
-        List<Map<String, dynamic>> tripsDataList = (tripsData).cast<Map<String, dynamic>>();
-        tripStartedStates = List<bool>.filled(tripsDataList.length, false);
+        if (tripsData != null && tripsData.isNotEmpty) {
+          List<Map<String, dynamic>> tripsDataList =
+              (tripsData).cast<Map<String, dynamic>>();
+          tripStartedStates = List<bool>.filled(tripsDataList.length,
+              false); // Inicializar tripStartedStates aquí
 
-        // Iterar sobre la lista de datos de viaje y obtener los puntos para cada uno
-        return Future.wait(
-          tripsDataList.map((tripData) => _getPointsForTrip(tripData['id'])).toList(),
-        ).then((List<List<Map<String, dynamic>>> pointsLists) {
-          return pointsLists.expand((points) => points).toList();
-        });
+          // Iterar sobre la lista de datos de viaje y obtener los puntos para cada uno
+          return Future.wait(
+            tripsDataList
+                .map((tripData) => _getPointsForTrip(tripData['id']))
+                .toList(),
+          ).then((List<List<Map<String, dynamic>>> pointsLists) {
+            return pointsLists.expand((points) => points).toList();
+          });
+        }
       }
     }
+
+    return [];
   }
-
-  return [];
-}
-
 Future<List<Map<String, dynamic>>> _getPointsForTrip(int idTrip) async {
   List<Map<String, dynamic>> pointsList = [];
 
@@ -205,10 +185,12 @@ Future<List<Map<String, dynamic>>> _getPointsForTrip(int idTrip) async {
 
       print('Response data: $data'); // Imprimir la respuesta JSON completa
 
-      if (data.containsKey('data') && data['data']['data'] is List) {
+      if (data.containsKey('data') && data['data']['data']is List) {
         List<dynamic> pointsData = data['data']['data'];
 
-        pointsList.addAll(pointsData.map((point) => point as Map<String, dynamic>).toList());
+        pointsList.addAll(pointsData
+            .map((point) => point as Map<String, dynamic>)
+            .toList());
       } else {
         throw Exception('Invalid data format in API response for trip $idTrip');
       }
@@ -220,12 +202,12 @@ Future<List<Map<String, dynamic>>> _getPointsForTrip(int idTrip) async {
       rethrow;
     }
   } else {
-    throw Exception('Failed to load points for trip $idTrip. Status code: ${response.statusCode}');
+    throw Exception(
+        'Failed to load points for trip $idTrip. Status code: ${response.statusCode}');
   }
 
   return pointsList;
 }
-
 
 
   @override
@@ -250,32 +232,86 @@ Future<List<Map<String, dynamic>>> _getPointsForTrip(int idTrip) async {
           ),
         ],
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _futurePoints,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else {
-            List<Map<String, dynamic>> pointsList = snapshot.data ?? [];
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 20),
+          const Center(
+            child: Text(
+              'Viajes del día',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Expanded(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _futurePoints,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else {
+                  List<Map<String, dynamic>> pointsList = snapshot.data ?? [];
 
-            if (pointsList.isEmpty) {
-              return Center(child: Text('No points found in the list.'));
-            } else {
-              return ListView.builder(
-                itemCount: pointsList.length,
-                itemBuilder: (context, index) {
-                  return TripItem(
-                    toggleTripStarted: () => toggleTripStarted(index),
-                    toggleTripEnded: () => toggleTripEnded(index),
-                    tripData: pointsList[index],
-                  );
-                },
-              );
-            }
-          }
-        },
+                  if (pointsList.isEmpty) {
+                    return Center(child: Text('No points found in the list.'));
+                  } else {
+                    // Inicializar tripStartedStates con la misma longitud que pointsList
+                    tripStartedStates =
+                        List<bool>.filled(pointsList.length, false);
+
+                    return ListView.builder(
+                      itemCount: pointsList.length,
+                      itemBuilder: (context, index) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(
+  child: ElevatedButton(
+    onPressed: () {},
+    style: ElevatedButton.styleFrom(
+      padding: const EdgeInsets.symmetric(
+          vertical: 16, horizontal: 50),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(30),
+      ),
+      backgroundColor: const Color.fromARGB(
+          255, 8, 23, 156), // Color del botón
+    ),
+    child: Text(
+      (pointsList[index]['trip'] != null && pointsList[index]['trip']['name'] != null)
+          ? pointsList[index]['trip']['name']
+          : 'Unnamed Trip',
+      style: TextStyle(
+        fontSize: 16,
+        color: Colors.white, // Color blanco para el texto
+      ),
+    ),
+  ),
+),
+
+                            TripItem(
+                              tripStarted: tripStartedStates[index],
+                              tripEnded:
+                                  false, // No estoy seguro de cómo determinar tripEnded
+                              toggleTripStarted: () => toggleTripStarted(index),
+                              toggleTripEnded: () => toggleTripEnded(index),
+                              tripData: pointsList[index],
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  }
+                }
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
