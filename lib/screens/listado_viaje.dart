@@ -3,6 +3,7 @@ import 'detalles_screen.dart';
 import 'profile.dart'; // Importa tu pantalla de perfil
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class TripItem extends StatefulWidget {
   const TripItem({
@@ -130,127 +131,164 @@ class _TripItemState extends State<TripItem> {
 }
 
 class TripList extends StatefulWidget {
-  const TripList({Key? key,  this.title, this.tripListJson}) : super(key: key);
+  const TripList({Key? key, this.title, this.tripListJson}) : super(key: key);
 
   final String? title;
-  final String? tripListJson; 
+  final String? tripListJson;
 
   @override
   _TripListState createState() => _TripListState();
 }
 
 class _TripListState extends State<TripList> {
-  bool tripStarted = false;
-  List<bool> tripsEnded = [];
+  late Future<List<Map<String, dynamic>>> _futurePoints;
+  late String accessToken;
+  List<bool> tripStartedStates = []; // Lista para almacenar los estados de los viajes
 
   @override
   void initState() {
     super.initState();
-    _initializeTripsList();
+    _loadToken();
+    _futurePoints = _initializeTripsList();
   }
 
-void _initializeTripsList() {
-  Map<String, dynamic> jsonData = jsonDecode(widget.tripListJson!);
-  List<dynamic> tripsData = jsonData['data']['data'];
-  tripsEnded = List<bool>.filled(tripsData.length, false);
+  void _loadToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      accessToken = prefs.getString('accessToken') ?? '';
+      final int tripId = prefs.getInt('tripId') ?? 0;
+      if (tripId != 0) {
+        _futurePoints = _getPointsForTrip(tripId);
+      }
+    });
+  }
+
+ Future<List<Map<String, dynamic>>> _initializeTripsList() async {
+  if (widget.tripListJson != null && widget.tripListJson!.isNotEmpty) {
+    Map<String, dynamic>? jsonData = json.decode(widget.tripListJson!);
+
+    if (jsonData != null && jsonData.containsKey('data')) {
+      List<dynamic>? tripsData = jsonData['data'];
+
+      if (tripsData != null && tripsData.isNotEmpty) {
+        List<Map<String, dynamic>> tripsDataList = (tripsData).cast<Map<String, dynamic>>();
+        tripStartedStates = List<bool>.filled(tripsDataList.length, false);
+
+        // Iterar sobre la lista de datos de viaje y obtener los puntos para cada uno
+        return Future.wait(
+          tripsDataList.map((tripData) => _getPointsForTrip(tripData['id'])).toList(),
+        ).then((List<List<Map<String, dynamic>>> pointsLists) {
+          return pointsLists.expand((points) => points).toList();
+        });
+      }
+    }
+  }
+
+  return [];
 }
+
+Future<List<Map<String, dynamic>>> _getPointsForTrip(int idTrip) async {
+  List<Map<String, dynamic>> pointsList = [];
+
+  final Uri baseUrl = Uri.parse('https://api.valya.app/api/points');
+  final Map<String, dynamic> queryParams = {'id_trip': idTrip.toString()};
+  final Uri url = baseUrl.replace(queryParameters: queryParams);
+
+  final response = await http.get(
+    url,
+    headers: {'Authorization': 'Bearer $accessToken'},
+  );
+
+  if (response.statusCode == 200) {
+    try {
+      Map<String, dynamic> data = json.decode(response.body);
+
+      print('Response data: $data'); // Imprimir la respuesta JSON completa
+
+      if (data.containsKey('data') && data['data']['data'] is List) {
+        List<dynamic> pointsData = data['data']['data'];
+
+        pointsList.addAll(pointsData.map((point) => point as Map<String, dynamic>).toList());
+      } else {
+        throw Exception('Invalid data format in API response for trip $idTrip');
+      }
+    } on FormatException catch (e) {
+      print('Error parsing JSON response: $e');
+      throw Exception('Failed to parse API response for trip $idTrip');
+    } catch (e) {
+      print('Unexpected error fetching points for trip $idTrip: $e');
+      rethrow;
+    }
+  } else {
+    throw Exception('Failed to load points for trip $idTrip. Status code: ${response.statusCode}');
+  }
+
+  return pointsList;
+}
+
 
 
   @override
   Widget build(BuildContext context) {
-    // Check if all trips have ended
-    bool allEnded = tripsEnded.every((ended) => ended);
-
-    Map<String, dynamic> jsonData = jsonDecode(widget.tripListJson.toString());
-    List<dynamic> tripsData = jsonData['data']['data'];
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 68, 33, 243),
         title: const Text(''),
         actions: [
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ProfileDScreen()),
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ProfileDScreen()),
+              );
+            },
+            child: const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: CircleAvatar(
+                backgroundImage: AssetImage('assets/images/hombre.png'),
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: _futurePoints,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          } else {
+            List<Map<String, dynamic>> pointsList = snapshot.data ?? [];
+
+            if (pointsList.isEmpty) {
+              return Center(child: Text('No points found in the list.'));
+            } else {
+              return ListView.builder(
+                itemCount: pointsList.length,
+                itemBuilder: (context, index) {
+                  return TripItem(
+                    toggleTripStarted: () => toggleTripStarted(index),
+                    toggleTripEnded: () => toggleTripEnded(index),
+                    tripData: pointsList[index],
                   );
                 },
-                child: const Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: CircleAvatar(
-                    backgroundImage: AssetImage('assets/images/hombre.png'),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 20),
-          const Center(
-            child: Text(
-              'Today\'s Trips',
-              style: TextStyle(
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Expanded(
-            child: ListView.builder(
-              itemCount: tripsData.length,
-              itemBuilder: (context, index) {
-                return TripItem(
-                  tripData: tripsData[index],
-                  toggleTripStarted: () {
-                    setState(() {
-                      tripStarted = !tripStarted;
-                    });
-                  },
-                  // Update the trip end state
-                  toggleTripEnded: () {
-                    setState(() {
-                      tripsEnded[index] = !tripsEnded[index];
-                    });
-                  },
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 20),
-          // "End Trips" Button
-          Visibility(
-            visible: allEnded,
-            child: Center(
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 40), // Bottom margin to move the button up
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Action when "End Trips" button is pressed
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    backgroundColor: const Color.fromARGB(255, 112, 96, 228), // Button color
-                  ),
-                  child: const Text(
-                    'End Trips',
-                    style: TextStyle(fontSize: 19, color: Colors.white),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+              );
+            }
+          }
+        },
       ),
     );
+  }
+
+  // Método para cambiar el estado de inicio del viaje
+  void toggleTripStarted(int index) {
+    setState(() {
+      tripStartedStates[index] = !tripStartedStates[index];
+    });
+  }
+
+  // Método para cambiar el estado de finalización del viaje
+  void toggleTripEnded(int index) {
+    // Código para cambiar el estado de finalización del viaje
   }
 }

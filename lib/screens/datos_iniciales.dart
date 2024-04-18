@@ -76,7 +76,7 @@ class _FormDatosCamionState extends State<FormDatosCamion> {
         // Si la solicitud es exitosa, navegar a la pantalla TripList
         Navigator.push(
           context,
-          MaterialPageRoute(    builder: (context) => TripList(title: '', tripListJson: json.encode(widget.data)),
+          MaterialPageRoute(       builder: (context) => TripList(title: '', tripListJson: json.encode(widget.data)),
  // Pasar los datos de tripInProgress aquí)),
         ));
       } else {

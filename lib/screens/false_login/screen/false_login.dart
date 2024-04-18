@@ -48,8 +48,18 @@ class _LoginScreenState2 extends State<LoginScreen2> {
     (trip) => trip['status'] != 'Finalizado',
     orElse: () => null,
   );
-    print('Viaje en progreso: $tripInProgress');
 
+    print('Viaje en progreso: $tripInProgress');
+            if (tripInProgress != null) {
+          prefs.setInt('tripId', tripInProgress['id']);
+           final int tripId = tripInProgress['id'];
+                     prefs.setInt('id_vehicle', int.parse(camionId));
+          prefs.setInt('id_responsible', int.parse(conductorId));
+
+          print('Trip ID: $tripId');
+          print('Vehicle ID: $camionId');
+          print('Responsible ID: $conductorId');
+        }
         } catch (e) {
           tripInProgress = {};
         }
