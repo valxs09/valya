@@ -35,27 +35,33 @@ class DetallesScreen extends StatelessWidget {
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ), // Título de la pantalla en el cuerpo
           _buildDetailText('Lugar de Destino:', tripData['name'] ?? 'Nombre del lugar'), // Detalle de lugar de destino
-_buildDetailText('Dirección:', tripData['facility'] != null ? tripData['facility']['address'] ?? 'Dirección del lugar' : 'No disponible'), // Detalle de dirección
+          _buildDetailText('Lugar de Destino:', tripData['address'] ?? 'Nombre del lugar'), // Detalle de lugar de destino
           _buildDetailText('Estado del Viaje:', tripData['status'] ?? 'Estado actual'), // Detalle de estado del viaje
         ],
       ),
     );
   }
 
-  Widget _buildDetailText(String title, String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            title,
-            style: TextStyle(fontWeight: FontWeight.bold),
+Widget _buildDetailText(String title, String text) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8.0),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(width: 10),
+        Flexible(
+          child: Text(
+            text,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(width: 10),
-          Text(text),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
+
 }

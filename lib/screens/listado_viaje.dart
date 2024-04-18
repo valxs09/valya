@@ -43,11 +43,9 @@ class _TripItemState extends State<TripItem> {
             IconButton(
               onPressed: () {
                 if (!widget.tripStarted && !widget.tripEnded) {
-                  widget.toggleTripStarted();
-                  widget.toggleTripStarted();
+                  widget.toggleTripStarted(); // Cambiar el estado de tripStarted
                 } else if (widget.tripStarted && !widget.tripEnded) {
-                  widget.toggleTripEnded();
-                  widget.toggleTripEnded();
+                  widget.toggleTripEnded(); // Cambiar el estado de tripEnded
                 }
               },
               icon: Icon(
@@ -90,7 +88,6 @@ class _TripItemState extends State<TripItem> {
               ElevatedButton(
                 onPressed: () {
                   widget.toggleTripEnded();
-                  widget.toggleTripEnded();
                 },
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(
@@ -122,8 +119,9 @@ class TripList extends StatefulWidget {
 class _TripListState extends State<TripList> {
   late Future<List<Map<String, dynamic>>> _futurePoints;
   late String accessToken;
-  List<bool> tripStartedStates =[]; // Lista para almacenar los estados de los viajes
+  List<bool> tripStartedStates = []; // Lista para almacenar los estados de los viajes
   List<bool> tripEndedStates = [];
+  Set<String> tripNames = {}; // Conjunto para almacenar los nombres de los viajes
 
   @override
   void initState() {
@@ -266,53 +264,66 @@ class _TripListState extends State<TripList> {
                   if (pointsList.isEmpty) {
                     return Center(child: Text('No points found in the list.'));
                   } else {
-                    // Inicializar tripStartedStates con la misma longitud que pointsList
-                    tripStartedStates =
-                        List<bool>.filled(pointsList.length, true);
-                    tripEndedStates =
-                        List<bool>.filled(pointsList.length, false);
+                    // Solo inicializa tripStartedStates y tripEndedStates si la lista de puntos está vacía
+                    if (tripStartedStates.isEmpty && tripEndedStates.isEmpty) {
+                      tripStartedStates = List<bool>.filled(pointsList.length, true);
+                      tripEndedStates = List<bool>.filled(pointsList.length, false);
+                    }
 
                     return ListView.builder(
                       itemCount: pointsList.length,
                       itemBuilder: (context, index) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Center(
-                              child: ElevatedButton(
-                                onPressed: () {},
-                                style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 16, horizontal: 50),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
+                        String tripName = pointsList[index]['trip']['name'] ?? 'Unnamed Trip';
+
+                        // Verificar si el nombre del viaje no se ha mostrado antes
+                        if (!tripNames.contains(tripName)) {
+                          // Agregar el nombre del viaje al conjunto
+                          tripNames.add(tripName);
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Center(
+                                child: ElevatedButton(
+                                  onPressed: () {},
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16, horizontal: 50),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                    backgroundColor: const Color.fromARGB(
+                                        255, 8, 23, 156), // Color del botón
                                   ),
-                                  backgroundColor: const Color.fromARGB(
-                                      255, 8, 23, 156), // Color del botón
-                                ),
-                                child: Text(
-                                  (pointsList[index]['trip'] != null &&
-                                          pointsList[index]['trip']['name'] !=
-                                              null)
-                                      ? pointsList[index]['trip']['name']
-                                      : 'Unnamed Trip',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors
-                                        .white, // Color blanco para el texto
+                                  child: Text(
+                                    tripName,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.white, // Color blanco para el texto
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                            TripItem(
-                              tripStarted: tripStartedStates[index],
-                              tripEnded: tripEndedStates[index],
-                              toggleTripStarted: () => toggleTripStarted(index),
-                              toggleTripEnded: () => toggleTripEnded(index),
-                              tripData: pointsList[index],
-                            ),
-                          ],
-                        );
+                              SizedBox(height: 10), // Agregar espacio entre el botón del nombre del viaje y el TripItem
+                              TripItem(
+                                tripStarted: tripStartedStates[index],
+                                tripEnded: tripEndedStates[index],
+                                toggleTripStarted: () => toggleTripStarted(index),
+                                toggleTripEnded: () => toggleTripEnded(index), // Pasar la función toggleTripEnded
+                                tripData: pointsList[index],
+                              ),
+                            ],
+                          );
+                        } else {
+                          // Retornar solo el TripItem si el nombre del viaje ya se ha mostrado antes
+                          return TripItem(
+                            tripStarted: tripStartedStates[index],
+                            tripEnded: tripEndedStates[index],
+                            toggleTripStarted: () => toggleTripStarted(index),
+                            toggleTripEnded: () => toggleTripEnded(index), // Pasar la función toggleTripEnded
+                            tripData: pointsList[index],
+                          );
+                        }
                       },
                     );
                   }
