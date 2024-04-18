@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
        debugShowCheckedModeBanner: false,
       title: 'Splash Screen Example',
-      theme: ThemeData(
+      theme: ThemeData( 
         primarySwatch: Colors.purple,
       ),
       home: SplashScreen(),

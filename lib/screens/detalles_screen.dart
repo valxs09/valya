@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class DetallesScreen extends StatelessWidget {
-  const DetallesScreen({Key? key}) : super(key: key);
+  const DetallesScreen({Key? key, required this.tripData}) : super(key: key);
+
+  final Map<String, dynamic> tripData;
 
   @override
   Widget build(BuildContext context) {
@@ -29,31 +31,37 @@ class DetallesScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           const Text(
-            'Detalles destino 1',
+            'Detalles del Viaje',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ), // Título de la pantalla en el cuerpo
-          _buildDetailText('Lugar de destino:', 'Nombre del lugar'), // Detalle de lugar de destino
-          _buildDetailText('Dirección:', 'Dirección del lugar'), // Detalle de dirección
-          _buildDetailText('Estado del viaje:', 'Estado actual'), // Detalle de estado del viaje
+          _buildDetailText('Lugar de Destino:', tripData['name'] ?? 'Nombre del lugar'), // Detalle de lugar de destino
+          _buildDetailText('Lugar de Destino:', tripData['address'] ?? 'Nombre del lugar'), // Detalle de lugar de destino
+          _buildDetailText('Estado del Viaje:', tripData['status'] ?? 'Estado actual'), // Detalle de estado del viaje
         ],
       ),
     );
   }
 
-  Widget _buildDetailText(String title, String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            title,
-            style: TextStyle(fontWeight: FontWeight.bold),
+Widget _buildDetailText(String title, String text) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8.0),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(width: 10),
+        Flexible(
+          child: Text(
+            text,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(width: 10),
-          Text(text),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
+
 }

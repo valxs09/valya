@@ -1,27 +1,31 @@
 import 'package:flutter/material.dart';
 import 'detalles_screen.dart';
 import 'profile.dart'; // Importa tu pantalla de perfil
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
-class ViajeItem extends StatefulWidget {
-  const ViajeItem({
+class TripItem extends StatefulWidget {
+  const TripItem({
     Key? key,
-    required this.location,
-    required this.toggleViajeIniciado,
-    required this.toggleViajeFinalizado,
+    required this.tripData,
+    required this.tripStarted,
+    required this.tripEnded,
+    required this.toggleTripStarted,
+    required this.toggleTripEnded,
   }) : super(key: key);
 
-  final String location;
-  final VoidCallback toggleViajeIniciado;
-  final VoidCallback toggleViajeFinalizado;
+  final Map<String, dynamic> tripData;
+  final bool tripStarted;
+  final bool tripEnded;
+  final VoidCallback toggleTripStarted;
+  final VoidCallback toggleTripEnded;
 
   @override
-  _ViajeItemState createState() => _ViajeItemState();
+  _TripItemState createState() => _TripItemState();
 }
 
-class _ViajeItemState extends State<ViajeItem> {
-  bool viajeIniciado = false;
-  bool viajeFinalizado = false;
-
+class _TripItemState extends State<TripItem> {
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -33,24 +37,25 @@ class _ViajeItemState extends State<ViajeItem> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Chapur ${widget.location}',
+              widget.tripData['name'] ?? 'Unnamed Trip',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             IconButton(
               onPressed: () {
-                setState(() {
-                  viajeIniciado = !viajeIniciado;
-                  widget.toggleViajeIniciado();
-                });
+                if (!widget.tripStarted && !widget.tripEnded) {
+                  widget.toggleTripStarted(); // Cambiar el estado de tripStarted
+                } else if (widget.tripStarted && !widget.tripEnded) {
+                  widget.toggleTripEnded(); // Cambiar el estado de tripEnded
+                }
               },
               icon: Icon(
-                viajeIniciado
-                    ? (viajeFinalizado
+                widget.tripStarted
+                    ? (widget.tripEnded
                         ? Icons.check_circle_outline
                         : Icons.pause_rounded)
                     : Icons.play_circle_outline,
-                color: viajeIniciado
-                    ? (viajeFinalizado ? Colors.green : Colors.orange)
+                color: widget.tripStarted
+                    ? (widget.tripEnded ? Colors.green : Colors.orange)
                     : Colors.purple,
                 size: 40,
               ),
@@ -58,24 +63,15 @@ class _ViajeItemState extends State<ViajeItem> {
           ],
         ),
         subtitle: Visibility(
-          visible: viajeIniciado && !viajeFinalizado,
+          visible: widget.tripStarted && !widget.tripEnded,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).push(
-                    PageRouteBuilder(
-                      pageBuilder: (_, __, ___) => const DetallesScreen(),
-                      transitionsBuilder: (_, animation, __, child) {
-                        return SlideTransition(
-                          position: Tween<Offset>(
-                            begin: const Offset(1.0, 0.0),
-                            end: Offset.zero,
-                          ).animate(animation),
-                          child: child,
-                        );
-                      },
+                    MaterialPageRoute(
+                      builder: (_) => DetallesScreen(tripData: widget.tripData),
                     ),
                   );
                 },
@@ -85,26 +81,22 @@ class _ViajeItemState extends State<ViajeItem> {
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   backgroundColor: const Color.fromARGB(
-                      255, 113, 158, 220), // Color del botón 'Detalles'
+                      255, 113, 158, 220), // Color del botón 'Details'
                 ),
-                child: const Text('Detalles'),
+                child: const Text('Details'),
               ),
               ElevatedButton(
                 onPressed: () {
-                  // Lógica para finalizar el viaje
-                  setState(() {
-                    viajeFinalizado = true;
-                    widget.toggleViajeFinalizado(); // Llamar al método para indicar que el viaje ha sido finalizado
-                  });
+                  widget.toggleTripEnded();
                 },
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  backgroundColor: Colors.red, // Color del botón 'Finalizar'
+                  backgroundColor: Colors.red, // Color del botón 'End Trip'
                 ),
-                child: const Text('Finalizar'),
+                child: const Text('End Trip'),
               ),
             ],
           ),
@@ -114,51 +106,133 @@ class _ViajeItemState extends State<ViajeItem> {
   }
 }
 
-class ListadoViajes extends StatefulWidget {
-  const ListadoViajes({Key? key, required this.title, required this.tripsData}) : super(key: key);
+class TripList extends StatefulWidget {
+  const TripList({Key? key, this.title, this.tripListJson}) : super(key: key);
 
-  final String title;
-  final Map<String, dynamic> tripsData; // Datos de los viajes
+  final String? title;
+  final String? tripListJson;
 
   @override
-  _ListadoViajesState createState() => _ListadoViajesState();
+  _TripListState createState() => _TripListState();
 }
 
-class _ListadoViajesState extends State<ListadoViajes> {
-  bool viajeIniciado = false;
-  List<bool> viajesFinalizados = [
-    false,
-    false,
-    false,
-    false
-  ]; // Lista para rastrear si cada viaje está finalizado
+class _TripListState extends State<TripList> {
+  late Future<List<Map<String, dynamic>>> _futurePoints;
+  late String accessToken;
+  List<bool> tripStartedStates = []; // Lista para almacenar los estados de los viajes
+  List<bool> tripEndedStates = [];
+  Set<String> tripNames = {}; // Conjunto para almacenar los nombres de los viajes
+
+  @override
+  void initState() {
+    super.initState();
+    _loadToken();
+    _futurePoints = _initializeTripsList();
+  }
+
+  void _loadToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      accessToken = prefs.getString('accessToken') ?? '';
+      final int tripId = prefs.getInt('tripId') ?? 0;
+      if (tripId != 0) {
+        _futurePoints = _getPointsForTrip(tripId);
+      }
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> _initializeTripsList() async {
+    if (widget.tripListJson != null && widget.tripListJson!.isNotEmpty) {
+      Map<String, dynamic>? jsonData = json.decode(widget.tripListJson!);
+
+      if (jsonData != null && jsonData.containsKey('data')) {
+        List<dynamic>? tripsData = jsonData['data'];
+
+        if (tripsData != null && tripsData.isNotEmpty) {
+          List<Map<String, dynamic>> tripsDataList =
+              (tripsData).cast<Map<String, dynamic>>();
+          tripStartedStates = List<bool>.filled(tripsDataList.length,
+              false); // Inicializar tripStartedStates aquí
+          tripEndedStates = List<bool>.filled(tripsDataList.length,
+              false); // Inicializar tripEndedStates aquí
+
+          // Iterar sobre la lista de datos de viaje y obtener los puntos para cada uno
+          return Future.wait(
+            tripsDataList
+                .map((tripData) => _getPointsForTrip(tripData['id']))
+                .toList(),
+          ).then((List<List<Map<String, dynamic>>> pointsLists) {
+            return pointsLists.expand((points) => points).toList();
+          });
+        }
+      }
+    }
+
+    return [];
+  }
+
+  Future<List<Map<String, dynamic>>> _getPointsForTrip(int idTrip) async {
+    List<Map<String, dynamic>> pointsList = [];
+
+    final Uri baseUrl = Uri.parse('https://api.valya.app/api/points');
+    final Map<String, dynamic> queryParams = {'id_trip': idTrip.toString()};
+    final Uri url = baseUrl.replace(queryParameters: queryParams);
+
+    final response = await http.get(
+      url,
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+
+    if (response.statusCode == 200) {
+      try {
+        Map<String, dynamic> data = json.decode(response.body);
+
+        print('Response data: $data'); // Imprimir la respuesta JSON completa
+
+        if (data.containsKey('data') && data['data']['data'] is List) {
+          List<dynamic> pointsData = data['data']['data'];
+
+          pointsList.addAll(pointsData
+              .map((point) => point as Map<String, dynamic>)
+              .toList());
+        } else {
+          throw Exception(
+              'Invalid data format in API response for trip $idTrip');
+        }
+      } on FormatException catch (e) {
+        print('Error parsing JSON response: $e');
+        throw Exception('Failed to parse API response for trip $idTrip');
+      } catch (e) {
+        print('Unexpected error fetching points for trip $idTrip: $e');
+        rethrow;
+      }
+    } else {
+      throw Exception(
+          'Failed to load points for trip $idTrip. Status code: ${response.statusCode}');
+    }
+
+    return pointsList;
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Verificar si todos los viajes están finalizados
-    bool todosFinalizados = viajesFinalizados.every((finalizado) => finalizado);
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 68, 33, 243),
         title: const Text(''),
         actions: [
-          Row(
-            children: [
-              GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const ProfileDScreen()),
-                  );
-                },
-                child: const Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: CircleAvatar(
-                    backgroundImage: AssetImage('assets/images/hombre.png'),
-                  ),
-                ),
+          GestureDetector(
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const ProfileDScreen()),
+              );
+            },
+            child: const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: CircleAvatar(
+                backgroundImage: AssetImage('assets/images/hombre.png'),
               ),
-            ],
+            ),
           ),
         ],
       ),
@@ -170,79 +244,91 @@ class _ListadoViajesState extends State<ListadoViajes> {
             child: Text(
               'Viajes del día',
               style: TextStyle(
-                fontSize: 40,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
           ),
-          const SizedBox(height: 20),
-          Center(
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 16, horizontal: 30),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                backgroundColor:
-                    const Color.fromARGB(255, 8, 23, 156), // Color del botón
-              ),
-              child: const Text(
-                'Chapur-Matutiono-0504',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white, // Color blanco para el texto
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
           Expanded(
-            child: ListView.builder(
-              itemCount: 4,
-              itemBuilder: (context, index) {
-                return ViajeItem(
-                  location: getLocationName(index),
-                  toggleViajeIniciado: () {
-                    setState(() {
-                      viajeIniciado = !viajeIniciado;
-                    });
-                  },
-                  // Actualizar el estado de finalización del viaje
-                  toggleViajeFinalizado: () {
-                    setState(() {
-                      viajesFinalizados[index] = !viajesFinalizados[index];
-                    });
-                  },
-                );
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _futurePoints,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else {
+                  List<Map<String, dynamic>> pointsList = snapshot.data ?? [];
+
+                  if (pointsList.isEmpty) {
+                    return Center(child: Text('No points found in the list.'));
+                  } else {
+                    // Solo inicializa tripStartedStates y tripEndedStates si la lista de puntos está vacía
+                    if (tripStartedStates.isEmpty && tripEndedStates.isEmpty) {
+                      tripStartedStates = List<bool>.filled(pointsList.length, true);
+                      tripEndedStates = List<bool>.filled(pointsList.length, false);
+                    }
+
+                    return ListView.builder(
+                      itemCount: pointsList.length,
+                      itemBuilder: (context, index) {
+                        String tripName = pointsList[index]['trip']['name'] ?? 'Unnamed Trip';
+
+                        // Verificar si el nombre del viaje no se ha mostrado antes
+                        if (!tripNames.contains(tripName)) {
+                          // Agregar el nombre del viaje al conjunto
+                          tripNames.add(tripName);
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Center(
+                                child: ElevatedButton(
+                                  onPressed: () {},
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16, horizontal: 50),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                    backgroundColor: const Color.fromARGB(
+                                        255, 8, 23, 156), // Color del botón
+                                  ),
+                                  child: Text(
+                                    tripName,
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.white, // Color blanco para el texto
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 10), // Agregar espacio entre el botón del nombre del viaje y el TripItem
+                              TripItem(
+                                tripStarted: tripStartedStates[index],
+                                tripEnded: tripEndedStates[index],
+                                toggleTripStarted: () => toggleTripStarted(index),
+                                toggleTripEnded: () => toggleTripEnded(index), // Pasar la función toggleTripEnded
+                                tripData: pointsList[index],
+                              ),
+                            ],
+                          );
+                        } else {
+                          // Retornar solo el TripItem si el nombre del viaje ya se ha mostrado antes
+                          return TripItem(
+                            tripStarted: tripStartedStates[index],
+                            tripEnded: tripEndedStates[index],
+                            toggleTripStarted: () => toggleTripStarted(index),
+                            toggleTripEnded: () => toggleTripEnded(index), // Pasar la función toggleTripEnded
+                            tripData: pointsList[index],
+                          );
+                        }
+                      },
+                    );
+                  }
+                }
               },
-            ),
-          ),
-          const SizedBox(height: 20),
-          // Botón "Finalizar Viajes"
-          Visibility(
-            visible: todosFinalizados,
-            child: Center(
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 40), // Margen inferior para mover el botón hacia arriba
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Acción cuando se presiona el botón "Finalizar Viajes"
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    backgroundColor: const Color.fromARGB(255, 112, 96, 228), // Color del botón
-                  ),
-                  child: const Text(
-                    'Finalizar Viajes',
-                    style: TextStyle(fontSize: 19, color: Colors.white),
-                  ),
-                ),
-              ),
             ),
           ),
         ],
@@ -250,18 +336,17 @@ class _ListadoViajesState extends State<ListadoViajes> {
     );
   }
 
-  String getLocationName(int index) {
-    switch (index) {
-      case 0:
-        return 'Centro';
-      case 1:
-        return 'del Norte';
-      case 2:
-        return 'Harbor';
-      case 3:
-        return 'Sur';
-      default:
-        return '';
-    }
+  // Método para cambiar el estado de inicio del viaje
+  void toggleTripStarted(int index) {
+    setState(() {
+      tripStartedStates[index] = !tripStartedStates[index];
+    });
+  }
+
+  // Método para cambiar el estado de finalización del viaje
+  void toggleTripEnded(int index) {
+    setState(() {
+      tripEndedStates[index] = !tripEndedStates[index];
+    });
   }
 }

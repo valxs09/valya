@@ -3,7 +3,9 @@ import 'datos_iniciales.dart';
 import 'package:lottie/lottie.dart';
 
 class AutorizacionScreen extends StatefulWidget {
-  const AutorizacionScreen({Key? key}) : super(key: key);
+  final Map<String, dynamic> data; // Definir el parámetro data
+
+  const AutorizacionScreen({Key? key, required this.data}) : super(key: key);
 
   @override
   _AutorizacionScreenState createState() => _AutorizacionScreenState();
@@ -13,7 +15,7 @@ class _AutorizacionScreenState extends State<AutorizacionScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance!.addPostFrameCallback((_) {
       _navigateToNextScreen();
     });
   }
@@ -21,7 +23,8 @@ class _AutorizacionScreenState extends State<AutorizacionScreen> {
   Future<void> _navigateToNextScreen() async {
     await Future.delayed(const Duration(milliseconds: 5000));
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => FormDatosCamion()),
+      MaterialPageRoute(    builder: (context) => FormDatosCamion(data: widget.data),
+       ) // Pasar los datos a la siguiente pantalla
     );
   }
 

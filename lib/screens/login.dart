@@ -1,7 +1,16 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'autorizacion_screen.dart';
-import 'listado_viaje.dart';
-import 'package:valya/data/models/api_service.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:valya/screens/false_login/screen/false_login.dart';
+// import 'autorizacion_screen.dart';
+// import 'listado_viaje.dart';
+// import 'package:valya/data/models/api_service.dart';
+
+
+//TODO LOGIN FALSO :D
+
+
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -10,9 +19,52 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _conductorIdController = TextEditingController();
-  final TextEditingController _camionIdController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
+  Future<void> _saveAccessToken(String accessToken) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('accessToken', accessToken);
+  }
+
+  Future<void> _login() async {
+    if (_formKey.currentState!.validate()) {
+      final String email = _emailController.text;
+      final String password = _passwordController.text;
+
+      final url = Uri.parse('https://api.valya.app/api/auth/login');
+      final response = await http.post(
+        url,
+        body: json.encode({'email': email, 'password': password}),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final String accessToken = responseData['accessToken'];
+
+        await _saveAccessToken(accessToken);
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) =>  LoginScreen2()),
+        );
+        print(accessToken);
+      } else {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Error al iniciar sesión'),
+            content: const Text('Por favor, revisa tus credenciales e intenta nuevamente.'),
+            actions: <Widget>[
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cerrar'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +75,6 @@ class _LoginScreenState extends State<LoginScreen> {
         actions: const [
           Padding(
             padding: EdgeInsets.all(8.0),
-            
           ),
         ],
       ),
@@ -43,8 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 25),
-              // Aquí puedes agregar la animación
-             Image.asset(
+              Image.asset(
                 'assets/images/login.png', // Ruta de tu imagen
                 width: 200,
                 height: 200,
@@ -56,43 +106,38 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   children: [
                     TextFormField(
-                      controller: _conductorIdController,
+                      controller: _emailController,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
-                        hintText: 'ID del Conductor',
+                        hintText: 'Correo electrónico',
                         errorStyle: TextStyle(color: Colors.red),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Ingrese el ID del Conductor';
+                          return 'Ingrese su correo electrónico';
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 16.0),
                     TextFormField(
-                      controller: _camionIdController,
+                      controller: _passwordController,
+                      obscureText: true,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
-                        hintText: 'ID del Camión',
+                        hintText: 'Contraseña',
                         errorStyle: TextStyle(color: Colors.red),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Ingrese el ID del Camión';
+                          return 'Ingrese su contraseña';
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 10),
                     ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(builder: (_) => const AutorizacionScreen()),
-                          );
-                        }
-                      },
+                      onPressed: _login,
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.white,
                         backgroundColor: const Color.fromARGB(
@@ -126,3 +171,5 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
+
+
