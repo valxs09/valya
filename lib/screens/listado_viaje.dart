@@ -44,7 +44,9 @@ class _TripItemState extends State<TripItem> {
               onPressed: () {
                 if (!widget.tripStarted && !widget.tripEnded) {
                   widget.toggleTripStarted();
+                  widget.toggleTripStarted();
                 } else if (widget.tripStarted && !widget.tripEnded) {
+                  widget.toggleTripEnded();
                   widget.toggleTripEnded();
                 }
               },
@@ -88,6 +90,7 @@ class _TripItemState extends State<TripItem> {
               ElevatedButton(
                 onPressed: () {
                   widget.toggleTripEnded();
+                  widget.toggleTripEnded();
                 },
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(
@@ -119,8 +122,8 @@ class TripList extends StatefulWidget {
 class _TripListState extends State<TripList> {
   late Future<List<Map<String, dynamic>>> _futurePoints;
   late String accessToken;
-  List<bool> tripStartedStates =
-      []; // Lista para almacenar los estados de los viajes
+  List<bool> tripStartedStates =[]; // Lista para almacenar los estados de los viajes
+  List<bool> tripEndedStates = [];
 
   @override
   void initState() {
@@ -152,6 +155,8 @@ class _TripListState extends State<TripList> {
               (tripsData).cast<Map<String, dynamic>>();
           tripStartedStates = List<bool>.filled(tripsDataList.length,
               false); // Inicializar tripStartedStates aquí
+          tripEndedStates = List<bool>.filled(tripsDataList.length,
+              false); // Inicializar tripEndedStates aquí
 
           // Iterar sobre la lista de datos de viaje y obtener los puntos para cada uno
           return Future.wait(
@@ -167,48 +172,49 @@ class _TripListState extends State<TripList> {
 
     return [];
   }
-Future<List<Map<String, dynamic>>> _getPointsForTrip(int idTrip) async {
-  List<Map<String, dynamic>> pointsList = [];
 
-  final Uri baseUrl = Uri.parse('https://api.valya.app/api/points');
-  final Map<String, dynamic> queryParams = {'id_trip': idTrip.toString()};
-  final Uri url = baseUrl.replace(queryParameters: queryParams);
+  Future<List<Map<String, dynamic>>> _getPointsForTrip(int idTrip) async {
+    List<Map<String, dynamic>> pointsList = [];
 
-  final response = await http.get(
-    url,
-    headers: {'Authorization': 'Bearer $accessToken'},
-  );
+    final Uri baseUrl = Uri.parse('https://api.valya.app/api/points');
+    final Map<String, dynamic> queryParams = {'id_trip': idTrip.toString()};
+    final Uri url = baseUrl.replace(queryParameters: queryParams);
 
-  if (response.statusCode == 200) {
-    try {
-      Map<String, dynamic> data = json.decode(response.body);
+    final response = await http.get(
+      url,
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
 
-      print('Response data: $data'); // Imprimir la respuesta JSON completa
+    if (response.statusCode == 200) {
+      try {
+        Map<String, dynamic> data = json.decode(response.body);
 
-      if (data.containsKey('data') && data['data']['data']is List) {
-        List<dynamic> pointsData = data['data']['data'];
+        print('Response data: $data'); // Imprimir la respuesta JSON completa
 
-        pointsList.addAll(pointsData
-            .map((point) => point as Map<String, dynamic>)
-            .toList());
-      } else {
-        throw Exception('Invalid data format in API response for trip $idTrip');
+        if (data.containsKey('data') && data['data']['data'] is List) {
+          List<dynamic> pointsData = data['data']['data'];
+
+          pointsList.addAll(pointsData
+              .map((point) => point as Map<String, dynamic>)
+              .toList());
+        } else {
+          throw Exception(
+              'Invalid data format in API response for trip $idTrip');
+        }
+      } on FormatException catch (e) {
+        print('Error parsing JSON response: $e');
+        throw Exception('Failed to parse API response for trip $idTrip');
+      } catch (e) {
+        print('Unexpected error fetching points for trip $idTrip: $e');
+        rethrow;
       }
-    } on FormatException catch (e) {
-      print('Error parsing JSON response: $e');
-      throw Exception('Failed to parse API response for trip $idTrip');
-    } catch (e) {
-      print('Unexpected error fetching points for trip $idTrip: $e');
-      rethrow;
+    } else {
+      throw Exception(
+          'Failed to load points for trip $idTrip. Status code: ${response.statusCode}');
     }
-  } else {
-    throw Exception(
-        'Failed to load points for trip $idTrip. Status code: ${response.statusCode}');
+
+    return pointsList;
   }
-
-  return pointsList;
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -262,6 +268,8 @@ Future<List<Map<String, dynamic>>> _getPointsForTrip(int idTrip) async {
                   } else {
                     // Inicializar tripStartedStates con la misma longitud que pointsList
                     tripStartedStates =
+                        List<bool>.filled(pointsList.length, true);
+                    tripEndedStates =
                         List<bool>.filled(pointsList.length, false);
 
                     return ListView.builder(
@@ -271,33 +279,34 @@ Future<List<Map<String, dynamic>>> _getPointsForTrip(int idTrip) async {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Center(
-  child: ElevatedButton(
-    onPressed: () {},
-    style: ElevatedButton.styleFrom(
-      padding: const EdgeInsets.symmetric(
-          vertical: 16, horizontal: 50),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(30),
-      ),
-      backgroundColor: const Color.fromARGB(
-          255, 8, 23, 156), // Color del botón
-    ),
-    child: Text(
-      (pointsList[index]['trip'] != null && pointsList[index]['trip']['name'] != null)
-          ? pointsList[index]['trip']['name']
-          : 'Unnamed Trip',
-      style: TextStyle(
-        fontSize: 16,
-        color: Colors.white, // Color blanco para el texto
-      ),
-    ),
-  ),
-),
-
+                              child: ElevatedButton(
+                                onPressed: () {},
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                      vertical: 16, horizontal: 50),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                  backgroundColor: const Color.fromARGB(
+                                      255, 8, 23, 156), // Color del botón
+                                ),
+                                child: Text(
+                                  (pointsList[index]['trip'] != null &&
+                                          pointsList[index]['trip']['name'] !=
+                                              null)
+                                      ? pointsList[index]['trip']['name']
+                                      : 'Unnamed Trip',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors
+                                        .white, // Color blanco para el texto
+                                  ),
+                                ),
+                              ),
+                            ),
                             TripItem(
                               tripStarted: tripStartedStates[index],
-                              tripEnded:
-                                  false, // No estoy seguro de cómo determinar tripEnded
+                              tripEnded: tripEndedStates[index],
                               toggleTripStarted: () => toggleTripStarted(index),
                               toggleTripEnded: () => toggleTripEnded(index),
                               tripData: pointsList[index],
@@ -325,6 +334,8 @@ Future<List<Map<String, dynamic>>> _getPointsForTrip(int idTrip) async {
 
   // Método para cambiar el estado de finalización del viaje
   void toggleTripEnded(int index) {
-    // Código para cambiar el estado de finalización del viaje
+    setState(() {
+      tripEndedStates[index] = !tripEndedStates[index];
+    });
   }
 }

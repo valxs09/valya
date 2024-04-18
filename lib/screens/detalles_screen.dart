@@ -35,7 +35,7 @@ class DetallesScreen extends StatelessWidget {
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ), // Título de la pantalla en el cuerpo
           _buildDetailText('Lugar de Destino:', tripData['name'] ?? 'Nombre del lugar'), // Detalle de lugar de destino
-          _buildDetailText('Dirección:', tripData['facility']['address'] ?? 'Dirección del lugar'), // Detalle de dirección
+_buildDetailText('Dirección:', tripData['facility'] != null ? tripData['facility']['address'] ?? 'Dirección del lugar' : 'No disponible'), // Detalle de dirección
           _buildDetailText('Estado del Viaje:', tripData['status'] ?? 'Estado actual'), // Detalle de estado del viaje
         ],
       ),
